@@ -8,11 +8,14 @@ from __future__ import annotations
 
 import asyncio
 import os
+import socket
 import struct
 from dataclasses import dataclass
 from typing import Any
 
 COAP_PORT = 5683
+DEFAULT_TIMEOUT = 2.0
+DEFAULT_ATTEMPTS = 3
 CONTENT_FORMAT_CBOR = 60
 
 METHOD_GET = 1
@@ -288,10 +291,10 @@ class _Protocol(asyncio.DatagramProtocol):
     """Collect incoming datagrams (or socket errors) into a queue."""
 
     def __init__(self) -> None:
-        self.queue: asyncio.Queue[bytes | Exception] = asyncio.Queue()
+        self.queue: asyncio.Queue[tuple[bytes, Any] | Exception] = asyncio.Queue()
 
     def datagram_received(self, data: bytes, addr: Any) -> None:
-        self.queue.put_nowait(data)
+        self.queue.put_nowait((data, addr))
 
     def error_received(self, exc: Exception) -> None:
         self.queue.put_nowait(exc)
@@ -310,24 +313,37 @@ class CoapClient:
         path: str,
         payload: bytes | None = None,
         *,
-        timeout: float = 2.0,
-        attempts: int = 3,
+        timeout: float | None = None,
+        attempts: int | None = None,
     ) -> CoapMessage:
-        """Send a request and return the response message."""
+        """Send a request and return the response message.
+
+        An unconnected UDP socket is used on purpose: the lamp receives requests
+        on port 5683 but may answer from a different UDP port, which a connected
+        socket would silently drop. Replies are accepted from any port of the
+        lamp's IP address.
+        """
+        timeout = DEFAULT_TIMEOUT if timeout is None else timeout
+        attempts = DEFAULT_ATTEMPTS if attempts is None else attempts
         loop = asyncio.get_running_loop()
         try:
-            transport, proto = await loop.create_datagram_endpoint(
-                _Protocol, remote_addr=(self.host, self.port)
+            infos = await loop.getaddrinfo(
+                self.host, self.port, family=socket.AF_INET, type=socket.SOCK_DGRAM
             )
-        except OSError as err:
+            ip = infos[0][4][0]
+            transport, proto = await loop.create_datagram_endpoint(
+                _Protocol, family=socket.AF_INET
+            )
+        except (OSError, IndexError) as err:
             raise CoapError(f"cannot open socket to {self.host}: {err}") from err
 
+        target = (ip, self.port)
         mid = int.from_bytes(os.urandom(2), "big")
         token = os.urandom(2)
         packet = encode_request(code, mid, path, payload, token)
         try:
             for _ in range(attempts):
-                transport.sendto(packet)
+                transport.sendto(packet, target)
                 end = loop.time() + timeout
                 while (remaining := end - loop.time()) > 0:
                     try:
@@ -336,8 +352,11 @@ class CoapClient:
                         break
                     if isinstance(item, Exception):
                         raise CoapError(f"network error: {item}") from item
+                    data, addr = item
+                    if addr[0] != ip:
+                        continue
                     try:
-                        msg = parse_message(item)
+                        msg = parse_message(data)
                     except CoapError:
                         continue
                     if msg.type == TYPE_RST and msg.mid == mid:
@@ -351,7 +370,7 @@ class CoapClient:
                     if msg.token == token and msg.code != 0:
                         if msg.type == TYPE_CON:
                             transport.sendto(
-                                bytes([0x60, 0]) + struct.pack("!H", msg.mid)
+                                bytes([0x60, 0]) + struct.pack("!H", msg.mid), addr
                             )
                         return msg
             raise CoapTimeout(f"no answer from {self.host}:{self.port}")

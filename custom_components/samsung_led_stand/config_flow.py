@@ -40,7 +40,8 @@ class SamsungLedStandConfigFlow(ConfigFlow, domain=DOMAIN):
             host = user_input[CONF_HOST].strip()
             try:
                 info = await _probe(host)
-            except CoapError:
+            except CoapError as err:
+                _LOGGER.warning("Could not reach LED stand at %s: %s", host, err)
                 errors["base"] = "cannot_connect"
             except Exception:  # noqa: BLE001
                 _LOGGER.exception("Unexpected error while contacting %s", host)
@@ -70,7 +71,8 @@ class SamsungLedStandConfigFlow(ConfigFlow, domain=DOMAIN):
         host = discovery_info.ip
         try:
             info = await _probe(host)
-        except CoapError:
+        except CoapError as err:
+            _LOGGER.debug("DHCP-discovered %s is not a reachable LED stand: %s", host, err)
             return self.async_abort(reason="cannot_connect")
         await self.async_set_unique_id(info.uuid)
         # Also keeps the stored IP current if the lamp gets a new address.

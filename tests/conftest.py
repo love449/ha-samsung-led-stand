@@ -30,3 +30,10 @@ async def fake_stand():
     fake, _port, transport = await start_fake("127.0.0.1", 5683)
     yield fake
     transport.close()
+
+
+@pytest.fixture(autouse=True)
+def fast_timeouts(monkeypatch):
+    """Do not wait seconds for a lamp that is not there."""
+    monkeypatch.setattr("custom_components.samsung_led_stand.coap.DEFAULT_TIMEOUT", 0.3)
+    monkeypatch.setattr("custom_components.samsung_led_stand.coap.DEFAULT_ATTEMPTS", 2)

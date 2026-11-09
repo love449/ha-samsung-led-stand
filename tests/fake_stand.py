@@ -40,6 +40,9 @@ class FakeStand(asyncio.DatagramProtocol):
         self.drop_next = 0  # silently ignore this many requests
         self.reject_modes: set[str] = set()
         self.transport: asyncio.DatagramTransport | None = None
+        # Like the real lamp: requests arrive on 5683 but answers are sent from
+        # a different (unicast) UDP port.
+        self.reply_transport: asyncio.DatagramTransport | None = None
 
     def connection_made(self, transport: asyncio.DatagramTransport) -> None:
         self.transport = transport
@@ -92,8 +95,9 @@ class FakeStand(asyncio.DatagramProtocol):
         reply += struct.pack("!H", msg.mid) + msg.token
         if payload:
             reply += b"\xc1\x3c\xff" + payload
-        assert self.transport is not None
-        self.transport.sendto(bytes(reply), addr)
+        sender = self.reply_transport or self.transport
+        assert sender is not None
+        sender.sendto(bytes(reply), addr)
 
 
 async def start_fake(host: str = "127.0.0.1", port: int = 0):
@@ -102,4 +106,19 @@ async def start_fake(host: str = "127.0.0.1", port: int = 0):
     transport, proto = await loop.create_datagram_endpoint(
         FakeStand, local_addr=(host, port)
     )
-    return proto, transport.get_extra_info("sockname")[1], transport
+    reply_transport, _ = await loop.create_datagram_endpoint(
+        asyncio.DatagramProtocol, local_addr=(host, 0)
+    )
+    proto.reply_transport = reply_transport
+
+    class _Both:
+        """Close both sockets together."""
+
+        def close(self) -> None:
+            transport.close()
+            reply_transport.close()
+
+        def get_extra_info(self, *args, **kwargs):
+            return transport.get_extra_info(*args, **kwargs)
+
+    return proto, transport.get_extra_info("sockname")[1], _Both()
