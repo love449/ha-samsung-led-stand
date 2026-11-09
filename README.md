@@ -1,3 +1,5 @@
+![SmartThings LED Stand Local](https://raw.githubusercontent.com/love449/ha-samsung-led-stand/main/docs/banner.png)
+
 # 삼성 스마트싱스 LED 스탠드 (로컬) – Home Assistant 연동
 
 삼성 스마트싱스 **LED 스탠드**(Wi-Fi 직결, "Works with SmartThings" 계열)를
@@ -59,6 +61,10 @@ HA는 10초마다 위 리소스를 읽고, 명령은 `POST`로 보냅니다. 외
 
 기기가 위 목록에 없는 값을 보고하면 선택지에 자동으로 추가되어 표시됩니다.
 값이 다르면 `custom_components/samsung_led_stand/const.py`의 `LIGHTING_MODES`를 고쳐 주세요.
+
+## 변경 이력
+
+[CHANGELOG.md](CHANGELOG.md)를 참고하세요.
 
 ## 문제 해결
 
