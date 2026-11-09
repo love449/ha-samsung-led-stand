@@ -1,0 +1,47 @@
+{
+  "config": {
+    "flow_title": "{name} ({host})",
+    "step": {
+      "user": {
+        "title": "삼성 스마트싱스 LED 스탠드",
+        "description": "LED 스탠드의 IP 주소를 입력하세요. SmartThings 클라우드 없이 로컬로 제어합니다.",
+        "data": {
+          "host": "IP 주소"
+        }
+      },
+      "confirm": {
+        "description": "LED 스탠드 {name} ({host})을(를) 추가할까요?"
+      },
+      "reconfigure": {
+        "title": "IP 주소 변경",
+        "data": {
+          "host": "IP 주소"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "이 주소에서 LED 스탠드를 찾지 못했어요. IP 주소와 스탠드 전원을 확인해 주세요.",
+      "unknown": "예상치 못한 오류가 발생했어요. Home Assistant 로그를 확인해 주세요."
+    },
+    "abort": {
+      "already_configured": "이미 등록된 LED 스탠드예요.",
+      "cannot_connect": "LED 스탠드에 연결하지 못했어요.",
+      "unique_id_mismatch": "이 주소는 다른 기기예요.",
+      "reconfigure_successful": "IP 주소를 변경했어요."
+    }
+  },
+  "entity": {
+    "select": {
+      "lighting_mode": {
+        "name": "조명 모드",
+        "state": {
+          "reading": "학습(언어)",
+          "writing": "학습(수리)",
+          "computer": "학습(멀티미디어)",
+          "night": "야간",
+          "sleepPreparation": "수면"
+        }
+      }
+    }
+  }
+}

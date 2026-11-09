@@ -1,0 +1,13 @@
+{
+  "domain": "samsung_led_stand",
+  "name": "Samsung SmartThings LED Stand (Local)",
+  "codeowners": ["@love449"],
+  "config_flow": true,
+  "dhcp": [{ "hostname": "smartledstand*" }],
+  "documentation": "https://github.com/love449/ha-samsung-led-stand",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/love449/ha-samsung-led-stand/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

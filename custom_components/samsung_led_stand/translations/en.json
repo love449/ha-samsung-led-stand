@@ -1,0 +1,47 @@
+{
+  "config": {
+    "flow_title": "{name} ({host})",
+    "step": {
+      "user": {
+        "title": "Samsung SmartThings LED Stand",
+        "description": "Enter the IP address of the LED stand. It is controlled locally, without the SmartThings cloud.",
+        "data": {
+          "host": "IP address"
+        }
+      },
+      "confirm": {
+        "description": "Add the LED stand {name} ({host})?"
+      },
+      "reconfigure": {
+        "title": "Change IP address",
+        "data": {
+          "host": "IP address"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach an LED stand at this address. Check the IP address and that the lamp is powered on.",
+      "unknown": "Unexpected error. See the Home Assistant log."
+    },
+    "abort": {
+      "already_configured": "This LED stand is already configured.",
+      "cannot_connect": "Could not reach the LED stand.",
+      "unique_id_mismatch": "This address belongs to a different device.",
+      "reconfigure_successful": "The IP address was updated."
+    }
+  },
+  "entity": {
+    "select": {
+      "lighting_mode": {
+        "name": "Lighting mode",
+        "state": {
+          "reading": "Study (language)",
+          "writing": "Study (math/science)",
+          "computer": "Study (multimedia)",
+          "night": "Night",
+          "sleepPreparation": "Sleep"
+        }
+      }
+    }
+  }
+}
